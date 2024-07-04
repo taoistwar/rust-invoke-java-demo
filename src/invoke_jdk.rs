@@ -3,13 +3,11 @@ use jni::signature::{JavaType, Primitive};
 use jni::sys::{jint, jobject};
 use jni::{InitArgsBuilder, JNIEnv, JavaVM};
 
-mod invoke_jdk;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub fn invoke_jdk_class() -> Result<(), Box<dyn std::error::Error>> {
     // JVM 初始化参数
     let jvm_args = InitArgsBuilder::new()
         .version(jni::JNIVersion::V8)
-        .option("-Djava.class.path=./java")
+        // .option("-Djava.class.path=D:\\workspace\\rust\\rust-alert\\java\\*")
         // .option("-Xcheck:jni")
         .option("-verbose:jni")
         .build()
@@ -20,8 +18,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut env = jvm.attach_current_thread().unwrap();
 
     match (|| {
-        let file_class = env.find_class("com/taoistwar/jni/PrintLibraryPath")?;
-        println!("{:?}", file_class);
+        let file_class = env.find_class("java/io/File")?;
+        // 获取静态字段
+        let separator = env.get_static_field(file_class, "separator", "Ljava/lang/String;")?;
+        let separator = env
+            .get_string(&JString::from(separator.l()?))?
+            .to_string_lossy()
+            .to_string();
+        println!("File.separator: {}", separator);
+        assert_eq!(separator, format!("{}", std::path::MAIN_SEPARATOR));
+        // env.get_static_field_unchecked(class, field, ty)
+
+        // 创建实例对象
+        let file_name = JObject::from(env.new_string("./Cargo.toml")?);
+        let file = env.new_object(
+            "java/io/File",
+            "(Ljava/lang/String;)V",
+            &[JValue::from(&file_name)],
+        )?;
+
+        // 调用实例方法
+        let abs = env.call_method(file, "getAbsolutePath", "()Ljava/lang/String;", &[])?;
+        let abs_path = env
+            .get_string(&JString::from(abs.l()?))?
+            .to_string_lossy()
+            .to_string();
+        println!("abs_path: {}", abs_path);
+
         jni::errors::Result::Ok(())
     })() {
         Ok(_) => Ok(()),
