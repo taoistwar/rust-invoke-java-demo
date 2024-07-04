@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // JVM 初始化参数
     let jvm_args = InitArgsBuilder::new()
         .version(jni::JNIVersion::V8)
-        .option("-Djava.class.path=./java")
+        .option("-Djava.class.path=./java/PrintLibraryPath.jar")
         // .option("-Xcheck:jni")
         .option("-verbose:jni")
         .build()
@@ -22,6 +22,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match (|| {
         let file_class = env.find_class("com/taoistwar/jni/PrintLibraryPath")?;
         println!("{:?}", file_class);
+        let file = env.new_object("com/taoistwar/jni/PrintLibraryPath", "()V", &[])?;
+
+        // 调用实例方法
+        let abs = env.call_method(file, "javaLibraryPath", "()Ljava/lang/String;", &[])?;
+        let abs_path = env
+            .get_string(&JString::from(abs.l()?))?
+            .to_string_lossy()
+            .to_string();
+        println!("javaLibraryPath: {}", abs_path);
         jni::errors::Result::Ok(())
     })() {
         Ok(_) => Ok(()),
