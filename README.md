@@ -6,6 +6,6 @@
 
 ```bash
 cd java
-javac com\taoistwar\jni\PrintLibraryPath.java
-jar cfm PrintLibraryPath.jar com\taoistwar\jni\PrintLibraryPath.class
+javac com/taoistwar/jni/PrintLibraryPath.java
+zip -r PrintLibraryPath.jar com/taoistwar/jni/PrintLibraryPath.class
 ```
